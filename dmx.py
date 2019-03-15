@@ -1,5 +1,3 @@
-import requests
-
 
 class Universe:
     def __init__(self, id, name):
@@ -19,32 +17,13 @@ class Universe:
     def channels(self):
         return (c for dev in self._devices for  c in dev.channels)
 
-    def serialise(self):
-        chans = sorted(self.channels, key=lambda c: c.id)
-        filled_chans = []
-        for chan in chans:
-            while chan.id - len(filled_chans) > 1:
-                filled_chans.append('0')
-            filled_chans.append(str(chan.value))
 
-        return {
-            'u': self.id,
-            'd': ','.join(filled_chans)
-        }
-
-
-#class DeviceMeta:
-#    def __new__(Meta, cls, bases, dict):
-        
-
-    
-#class Device(metaclass=DeviceMeta):
 class Device:
     def __init__(self, id, name):
         self.name = name
         self.id = id
         self.universe = None
-        self.channels = List(map(self._resolve_channel, filter(self._filter_channel, vars(self.__class__))))
+        self._channels = list(map(self._resolve_channel, filter(self._filter_channel, vars(self.__class__))))
 
     def __str__(self, specific=None):
         if specific is None:
@@ -54,6 +33,12 @@ class Device:
     @property
     def channels(self):
         return self._channels
+
+    def _filter_channel(self, var):
+        return var is Channel or var is OffsetChannel
+
+    def _resolve_channel(self, channel):
+        return channel.init(self.id)
 
 
 class Channel:
@@ -69,6 +54,9 @@ class Channel:
     @property
     def value(self):
         return self._value
+
+    def init(self, _):
+        return self
 
 
 class OffsetChannel:
@@ -100,32 +88,3 @@ class RGBAPar(Device):
     def __str__(self):
         extra = " ".join(map(lambda c: str(c), self._channels))
         return super().__str__(extra)
-
-
-def update_uni(universe):
-    data = universe.serialise()
-    requests.post("http://localhost:9090/set_dmx", data=data)
-
-u = Universe(1, "Test")
-d = RGBAPar(1, "Test")
-print(d)
-u.add(d)
-
-import time
-import math
-i = 0
-try:
-    while True:
-        i += 1
-        d.Red._value = max(0, math.cos(i/10) * 255)
-        #d.Green._value = max(0, math.cos((i+8)/10) * 255)
-        d.Blue._value = max(0, math.cos((i+16)/10) * 255)
-        #d.Amber._value = max(0, math.cos((i+24)/10) * 255)
-        update_uni(u)
-        time.sleep(0.01)
-except KeyboardInterrupt:
-    d.Red._value = 0
-    d.Green._value = 0
-    d.Blue._value = 0
-    d.Amber._value = 0
-    update_uni(u)
