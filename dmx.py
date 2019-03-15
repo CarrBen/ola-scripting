@@ -44,10 +44,12 @@ class Device:
         self.name = name
         self.id = id
         self.universe = None
-        self._channels = []
+        self.channels = List(map(self._resolve_channel, filter(self._filter_channel, vars(self.__class__))))
 
-    def __str__(self):
-        return f'<{self.__class__.__name__} {self.id} "{self.name}">'
+    def __str__(self, specific=None):
+        if specific is None:
+            return f'<{self.__class__.__name__} {self.id} "{self.name}">'
+        return f'<{self.__class__.__name__} {self.id} "{self.name}" {specific}>'
 
     @property
     def channels(self):
@@ -69,15 +71,35 @@ class Channel:
         return self._value
 
 
-class RGBAPar(Device):
-    Red = Channel(1, "Red")
-    Green = Channel(2, "Green")
-    Blue = Channel(3, "Blue")
-    Amber = Channel(4, "Amber")
+class OffsetChannel:
+    def __init__(self, offset, name, value=0):
+        if offset < 0 or offset > 512:
+            raise ValueError(f"Value {offset} for offset is invalid. Must be between 0 and 512.")
+        self._offset = offset
+        self._kwargs = {
+            'name': name,
+            'value': value
+        }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._channels = [self.Red, self.Green, self.Blue, self.Amber]
+    def __repr__(self):
+        return f"{self.__class__.__name__}(offset={self._offset}, name=\"{self._kwargs['name']}\", value={self._kwargs['value']})"
+
+    def __str__(self):
+        return f'<{self.__class__.__name__} {self._offset:+} "{self._kwargs["name"]}">'
+
+    def init(self, base_channel):
+        return Channel(base_channel + self._offset, **kwargs) 
+
+
+class RGBAPar(Device):
+    Red = OffsetChannel(0, "Red")
+    Green = OffsetChannel(1, "Green")
+    Blue = OffsetChannel(2, "Blue")
+    Amber = OffsetChannel(3, "Amber")
+
+    def __str__(self):
+        extra = " ".join(map(lambda c: str(c), self._channels))
+        return super().__str__(extra)
 
 
 def update_uni(universe):
@@ -86,6 +108,7 @@ def update_uni(universe):
 
 u = Universe(1, "Test")
 d = RGBAPar(1, "Test")
+print(d)
 u.add(d)
 
 import time
