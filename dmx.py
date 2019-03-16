@@ -17,6 +17,10 @@ class Universe:
     def channels(self):
         return (c for dev in self._devices for c in dev.channels)
 
+    def kill(self):
+        for dev in self._devices:
+            dev.kill()
+
 
 class Device:
     def __init__(self, id, name):
@@ -47,13 +51,19 @@ class Device:
     def _resolve_channel(self, channel):
         return channel.init(self.id)
 
+    def kill(self):
+        for chan in self._channels:
+            chan.kill()
+
+DARK = "DARK"
 
 class Channel:
-    def __init__(self, id, name, value=0):
+    def __init__(self, id, name, value=0, on_kill=DARK):
         self.id = id
         self.name = name
         self._value = value
         self.device = None
+        self.on_kill = on_kill
 
     def __str__(self):
         return f'<{self.__class__.__name__} {self.id} "{self.name}">'
@@ -72,15 +82,20 @@ class Channel:
         self.device = device
         return self
 
+    def kill(self):
+        if self.on_kill == DARK:
+            self._value=0
+
 
 class OffsetChannel:
-    def __init__(self, offset, name, value=0):
+    def __init__(self, offset, name, value=0, on_kill=DARK):
         if offset < 0 or offset > 512:
             raise ValueError(f"Value {offset} for offset is invalid. Must be between 0 and 512.")
         self._offset = offset
         self._kwargs = {
             'name': name,
-            'value': value
+            'value': value,
+            'on_kill': on_kill
         }
 
     def __repr__(self):

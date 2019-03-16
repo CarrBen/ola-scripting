@@ -1,5 +1,6 @@
 import aiohttp
 import asyncio
+import requests
 
 
 class OLAInterface:
@@ -15,6 +16,9 @@ class OLAInterface:
         async with self.session.post(self.url, data=self._serialise(self.universe)) as resp:
             return resp.status == 200
 
+    def send_update_sync(self):
+        requests.post(self.url, data=self._serialise(self.universe))
+
     def _serialise(self, universe):
         chans = sorted(universe.channels, key=lambda c: c.id)
         filled_chans = []
@@ -22,6 +26,7 @@ class OLAInterface:
             while chan.id - len(filled_chans) > 1:
                 filled_chans.append('0')
             filled_chans.append(str(chan.value))
+            #filled_chans = ['0'] * 512
 
         return {
             'u': universe.id,
