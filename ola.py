@@ -7,6 +7,7 @@ class OLAInterface:
         self.url = url
 
     def send_update(self):
+        print(self._serialise(self.universe)['d'])
         resp = requests.post(self.url, data=self._serialise(self.universe))
         return resp.status_code == 200
 
