@@ -17,6 +17,10 @@ class Universe:
     def channels(self):
         return (c for dev in self._devices for c in dev.channels)
 
+    @property
+    def devices(self):
+        return self._devices
+
     def kill(self):
         for dev in self._devices:
             dev.kill()

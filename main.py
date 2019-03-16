@@ -2,7 +2,10 @@ from dmx import Universe, RGBAPar
 from ola import OLAInterface
 import asyncio
 import time
-import math
+
+from effects.sine_rainbow import SineRainbow
+from effects.constant_colour import ConstantColour
+from stages import studio
 
 
 class LightScheduler:
@@ -55,66 +58,15 @@ class LightScheduler:
         self._tasks.append(task)
 
 
-class SineRainbow:
-    def __init__(self, device, speed=1.0, offset=0):
-        self.device = device
-        self.counter = offset
-        self.speed = speed
-        self.offset = offset
-
-    async def update(self, dt):
-        self.counter += dt
-
-        self.device.Red.value = max(0, math.sin((self.counter + 0) * self.speed) * 511 - 256)
-        self.device.Green.value = max(0, math.sin((self.counter + math.pi/2) * self.speed) * 511 - 256)
-        self.device.Blue.value = max(0, math.sin((self.counter + math.pi) * self.speed) * 511 - 256)
-        self.device.Amber.value = max(0, math.sin((self.counter + 3*math.pi/2) * self.speed) * 511 - 256)
-
-        return False
-
-
-u = Universe(1, "Test")
-d = RGBAPar(161, "Test")
-u.add(d)
-d2 = RGBAPar(9, "Test2")
-u.add(d2)
-d3 = RGBAPar(81, "Test3")
-u.add(d3)
-d4 = RGBAPar(85, "Test4")
-u.add(d4)
-d5 = RGBAPar(33, "Test5")
-u.add(d5)
-d6 = RGBAPar(37, "Test3")
-u.add(d6)
-d7 = RGBAPar(49, "Test4")
-u.add(d7)
-d8 = RGBAPar(113, "Test5")
-u.add(d8)
-d9 = RGBAPar(1, "Test3")
-u.add(d9)
-d10 = RGBAPar(129, "Test4")
-u.add(d10)
-d11 = RGBAPar(65, "Test5")
-u.add(d11)
-
-interface = OLAInterface(u, "http://localhost:9090/set_dmx")
+interface = OLAInterface(studio.u, "http://localhost:9090/set_dmx")
 scheduler = LightScheduler(1.0/100, interface.send_update)
-scheduler.add_task(SineRainbow(d, speed=5))
-scheduler.add_task(SineRainbow(d2, offset=1, speed=5))
-scheduler.add_task(SineRainbow(d3, offset=2, speed=5))
-scheduler.add_task(SineRainbow(d4, offset=3, speed=5))
-scheduler.add_task(SineRainbow(d5, offset=4, speed=5))
-scheduler.add_task(SineRainbow(d6, offset=5, speed=5))
-scheduler.add_task(SineRainbow(d7, offset=6, speed=5))
-scheduler.add_task(SineRainbow(d8, offset=7, speed=5))
-scheduler.add_task(SineRainbow(d9, offset=8, speed=5))
-scheduler.add_task(SineRainbow(d10, offset=9, speed=5))
-scheduler.add_task(SineRainbow(d11, offset=10, speed=5))
+for dev in studio.u.devices:
+    scheduler.add_task(ConstantColour(dev, colour=(0, 0, 0, 50)))
 
 try:
-    task = scheduler.start()
+    scheduler.start()
 except:
     pass
 
-u.kill()
+studio.u.kill()
 interface.send_update_sync()
