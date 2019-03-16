@@ -5,44 +5,47 @@ import time
 import math
 
 
-class Scheduler:
-    def __init__(self, interval, update_cb, loop=None):
+class LightScheduler:
+    def __init__(self, interval, update_cb):
         self.interval = interval
-        self.loop = loop or asyncio.get_event_loop()
         self.update_cb = update_cb
         self.last_run = None
         self.time_bank = 0
         self._tasks = []
 
     def start(self):
-        self.last_run = time.monotonic()
-        self._schedule_call()
-        self.loop.run_forever()
+        asyncio.run(self._start())
+
+    async def _start(self):
+        self.loop = asyncio.get_event_loop()
+        self.last_run = self.loop.time()
+
+        while True:
+            self._schedule_call()
+            await self._run()
+            await asyncio.sleep(max(0, self.next_run - self.loop.time()))
 
     def _schedule_call(self):
-        base = time.monotonic()
+        base = self.loop.time()
         diff = base - round(base)
         ticks = diff // self.interval
-        next =  round(base) + (ticks + 1) * self.interval
-        self.loop.call_at(next, self._run)
-        self.next_run = next
+        self.next_run =  round(base) + (ticks + 1) * self.interval
 
-    def _run(self):
+    async def _run(self):
         self.time_bank += self.next_run - self.last_run
         self.last_run = self.next_run
 
         while self.time_bank >= self.interval:
-            self._run_tasks(self.interval)
+            await self._run_tasks(self.interval)
             self.time_bank -= self.interval
 
-        self.update_cb()
-        self._schedule_call()
+        await self.update_cb()
 
-    def _run_tasks(self, dt):
+    async def _run_tasks(self, dt):
         completed = []
 
         for task in self._tasks:
-            if task.update(dt):
+            if await task.update(dt):
                 completed.append(task)
 
         for task in completed:
@@ -58,7 +61,7 @@ class SineRainbow:
         self.counter = 0
         self.speed = 1.0
 
-    def update(self, dt):
+    async def update(self, dt):
         self.counter += dt
 
         self.device.Red.value = max(0, math.sin((self.counter + 0) * self.speed) * 511 - 256)
@@ -74,7 +77,7 @@ d = RGBAPar(1, "Test")
 u.add(d)
 
 interface = OLAInterface(u, "http://localhost:9090/set_dmx")
-scheduler = Scheduler(1.0/25, interface.send_update)
+scheduler = LightScheduler(1.0/25, interface.send_update)
 scheduler.add_task(SineRainbow(d))
 scheduler.start()
 
