@@ -15,7 +15,7 @@ class Universe:
 
     @property
     def channels(self):
-        return (c for dev in self._devices for  c in dev.channels)
+        return (c for dev in self._devices for c in dev.channels)
 
 
 class Device:
@@ -23,7 +23,14 @@ class Device:
         self.name = name
         self.id = id
         self.universe = None
-        self._channels = list(map(self._resolve_channel, filter(self._filter_channel, vars(self.__class__))))
+
+        self._channels = []
+        for attr, channel in vars(self.__class__).items():
+            if not self._filter_channel(channel):
+                continue
+            new_channel = channel.init(self.id, self)
+            setattr(self, attr, new_channel)
+            self._channels.append(new_channel)
 
     def __str__(self, specific=None):
         if specific is None:
@@ -35,7 +42,7 @@ class Device:
         return self._channels
 
     def _filter_channel(self, var):
-        return var is Channel or var is OffsetChannel
+        return issubclass(type(var), (Channel, OffsetChannel))
 
     def _resolve_channel(self, channel):
         return channel.init(self.id)
@@ -55,7 +62,14 @@ class Channel:
     def value(self):
         return self._value
 
-    def init(self, _):
+    @value.setter
+    def value(self, v):
+        if v > 255 or v < 0:
+            raise ValueError(f"Value for {self} of {self.device} must be between 0 and 255 inclusive. Was {v}.")
+        self._value = v
+
+    def init(self, base_channel, device):
+        self.device = device
         return self
 
 
@@ -75,8 +89,10 @@ class OffsetChannel:
     def __str__(self):
         return f'<{self.__class__.__name__} {self._offset:+} "{self._kwargs["name"]}">'
 
-    def init(self, base_channel):
-        return Channel(base_channel + self._offset, **kwargs) 
+    def init(self, base_channel, device):
+        chan = Channel(base_channel + self._offset, **self._kwargs)
+        chan.device = device
+        return chan
 
 
 class RGBAPar(Device):

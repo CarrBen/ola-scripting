@@ -1,14 +1,14 @@
-import aiohttp
+import requests
 
 
 class OLAInterface:
-    def __init__(self, url):
+    def __init__(self, universe, url):
+        self.universe = universe
         self.url = url
-        self.session = aiohttp.ClientSession()
 
-    async def update(self, universe):
-        async with self.session.post(url, data=self._serialise(universe)) as response:
-            return response.status == 200
+    def send_update(self):
+        resp = requests.post(self.url, data=self._serialise(self.universe))
+        return resp.status_code == 200
 
     def _serialise(self, universe):
         chans = sorted(universe.channels, key=lambda c: c.id)
