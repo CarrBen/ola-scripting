@@ -7,6 +7,11 @@ from effects.sine_rainbow import SineRainbow
 from effects.constant_colour import ConstantColour
 from stages import studio
 
+# TODO: Logging
+# TODO: HTTP API
+# TODO: Debug tool
+# TODO: Make it more library like
+# TODO: Background/Transient Effects
 
 class LightScheduler:
     def __init__(self, interval, update_cb):

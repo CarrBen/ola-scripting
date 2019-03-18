@@ -59,6 +59,7 @@ class Device:
         for chan in self._channels:
             chan.kill()
 
+# TODO: Kill actions (Fade/Persist)
 DARK = "DARK"
 
 class Channel:
@@ -114,6 +115,7 @@ class OffsetChannel:
         return chan
 
 
+# TODO: Split this out
 class RGBAPar(Device):
     Red = OffsetChannel(0, "Red")
     Green = OffsetChannel(1, "Green")

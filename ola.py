@@ -3,6 +3,7 @@ import asyncio
 import requests
 
 
+# TODO: Auto setup of OLA with Universe & Device
 class OLAInterface:
     def __init__(self, universe, url):
         self.universe = universe
@@ -11,8 +12,7 @@ class OLAInterface:
 
     async def send_update(self):
         if self.session is None:
-            self.session = aiohttp.ClientSession()
-        #print(self._serialise(self.universe)['d'])
+            self.session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=1))
         async with self.session.post(self.url, data=self._serialise(self.universe)) as resp:
             return resp.status == 200
 
@@ -26,7 +26,6 @@ class OLAInterface:
             while chan.id - len(filled_chans) > 1:
                 filled_chans.append('0')
             filled_chans.append(str(chan.value))
-            #filled_chans = ['0'] * 512
 
         return {
             'u': universe.id,

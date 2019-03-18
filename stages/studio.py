@@ -2,6 +2,8 @@ from dmx import Universe
 from dmx import RGBAPar
 
 
+# TODO: Groups of lights
+# TODO: Position information
 u = Universe(1, "Test")
 floor_back_left_corner = RGBAPar(161, "Floor Back Left Corner")
 u.add(floor_back_left_corner)
