@@ -1,16 +1,50 @@
 
-class Universe:
+class JsonSerialiseMixin:
+    def __json__(self, parents=set(), depth=3):
+        attrs = dir(self)
+        return {
+            attr: self.__json__object(getattr(self, attr), parents, depth-1) for attr in attrs if self.__json__suitable(attr)
+        }
+
+    def __json__suitable(self, attr):
+        # Magic/Private
+        if attr.startswith('_'):
+            return False
+
+        # Method
+        value = getattr(self, attr)
+        if type(value) is type(self.__init__):
+            return False
+
+        # Generator
+        if type(value) is type((x for x in (1,2))):
+            return False
+
+        return True
+
+    def __json__object(self, value, parents, depth):
+        if type(value) is list:
+            return [self.__json__object(item, parents, depth) for item in value]
+
+        if type(value) is dict:
+            return {key: self.__json__object(value, parents, depth) for key, value in value.items()}
+
+        if value in parents:
+            return None
+
+        new_parents = {self, *parents}
+
+        if hasattr(value, '__json__'):
+            return value.__json__(new_parents, depth)
+
+        return value
+
+
+class Universe(JsonSerialiseMixin):
     def __init__(self, id, name):
         self.name = name
         self.id = id
         self._devices = []
-
-    def __json__(self, depth=3):
-        return {
-            "name": self.name,
-            "id": self.id,
-            "devices": [d.__json__(depth-1) for d in self._devices] if depth > 1 else None
-        }
 
     def __str__(self):
         return f'<{self.__class__.__name__} {self.id} "{self.name}">'
@@ -33,7 +67,7 @@ class Universe:
             dev.kill()
 
 
-class Device:
+class Device(JsonSerialiseMixin):
     def __init__(self, id, name):
         self.name = name
         self.id = id
@@ -46,13 +80,6 @@ class Device:
             new_channel = channel.init(self.id, self)
             setattr(self, attr, new_channel)
             self._channels.append(new_channel)
-
-    def __json__(self, depth=3):
-        return {
-            "name": self.name,
-            "id": self.id,
-            "channels": [c.__json__(depth-1) for c in self._channels] if depth > 1 else None
-        }
 
     def __str__(self, specific=None):
         if specific is None:
@@ -76,20 +103,13 @@ class Device:
 # TODO: Kill actions (Fade/Persist)
 DARK = "DARK"
 
-class Channel:
+class Channel(JsonSerialiseMixin):
     def __init__(self, id, name, value=0, on_kill=DARK):
         self.id = id
         self.name = name
         self._value = value
         self.device = None
         self.on_kill = on_kill
-
-    def __json__(self, depth=3):
-        return {
-            "name": self.name,
-            "id": self.id,
-            "on_kill": self.on_kill
-        }
 
     def __str__(self):
         return f'<{self.__class__.__name__} {self.id} "{self.name}">'
