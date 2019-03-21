@@ -2,11 +2,12 @@ from dmx import Universe, RGBAPar
 from ola import OLAInterface
 import asyncio
 import time
-from aiohttp import web
+#from aiohttp import web
 
 from effects.sine_rainbow import SineRainbow
 from effects.constant_colour import ConstantColour
 from stages import studio
+from control import RestAPI
 
 # TODO: Logging
 # TODO: Make HTTP API do stuff
@@ -29,19 +30,8 @@ class LightScheduler:
 
     def start(self, additional_tasks=[]):
         self.loop = asyncio.get_event_loop()
-        tasks = asyncio.gather(self._start(), self._api(), *additional_tasks)
+        tasks = asyncio.gather(self._start(), *additional_tasks)
         self.loop.run_until_complete(tasks)
-
-    async def _get_tasks(self, request):
-        return web.Response(text=str(self._tasks))
-
-    async def _api(self):
-        app = web.Application()
-        app.add_routes([web.get('/', self._get_tasks)])
-        runner = web.AppRunner(app)
-        await runner.setup()
-        site = web.TCPSite(runner, 'localhost', 8080)
-        await site.start()
 
     async def _start(self):
         self.last_run = self.loop.time()
@@ -82,12 +72,12 @@ class LightScheduler:
 
 
 interface = OLAInterface(studio.u, "http://localhost:9090/set_dmx")
-scheduler = LightScheduler(1.0/100, interface.send_update)
+scheduler = LightScheduler(1.0/25, interface.send_update)
 for dev in studio.u.devices:
     #scheduler.add_task(ConstantColour(dev, colour=(0, 0, 0, 50)))
     scheduler.add_task(SineRainbow(dev))
 
-scheduler.start()
+scheduler.start(additional_tasks=(RestAPI(studio).start(),))
 
 studio.u.kill()
 interface.send_update_sync()
