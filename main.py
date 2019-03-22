@@ -19,21 +19,16 @@ from control import RestAPI
 # TODO: Docstrings/typehints
 # TODO: More generic than just DMX?
 
-class LightScheduler:
+class EffectScheduler:
     def __init__(self, interval, update_cb):
         self.interval = interval
         self.update_cb = update_cb
         self.last_run = None
         self.time_bank = 0
         self._tasks = []
-        self.loop = None
 
-    def start(self, additional_tasks=[]):
+    async def start(self):
         self.loop = asyncio.get_event_loop()
-        tasks = asyncio.gather(self._start(), *additional_tasks)
-        self.loop.run_until_complete(tasks)
-
-    async def _start(self):
         self.last_run = self.loop.time()
 
         while True:
@@ -70,14 +65,25 @@ class LightScheduler:
     def add_task(self, task):
         self._tasks.append(task)
 
+    async def kill(self, universe):
+        universe.kill()
+        await self.update_cb()
+
 
 interface = OLAInterface(studio.u, "http://localhost:9090/set_dmx")
-scheduler = LightScheduler(1.0/25, interface.send_update)
+effect_scheduler = EffectScheduler(1.0/25, interface.send_update)
 for dev in studio.u.devices:
     #scheduler.add_task(ConstantColour(dev, colour=(0, 0, 0, 50)))
-    scheduler.add_task(SineRainbow(dev))
+    effect_scheduler.add_task(SineRainbow(dev))
+rest_api = RestAPI(studio)
 
-scheduler.start(additional_tasks=(RestAPI(studio).start(),))
+loop = asyncio.get_event_loop()
+tasks = asyncio.gather(effect_scheduler.start(), rest_api.start())
+try:
+    loop.run_until_complete(tasks)
+except KeyboardInterrupt:
+    pass
 
-studio.u.kill()
-interface.send_update_sync()
+#studio.u.kill()
+loop.run_until_complete(effect_scheduler.kill(studio.u))
+#interface.send_update_sync()

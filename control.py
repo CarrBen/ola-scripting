@@ -4,7 +4,8 @@ import weakref
 
 
 # TODO: Serialisable mixin
-# TODO: __json__/__xml__ with parent & depth parameters
+# TODO: __xml__ with parent & depth parameters?
+# TODO: More specific serialisation?
 
 class RecursiveEncoder(json.JSONEncoder):
     def default(self, obj):
