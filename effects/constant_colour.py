@@ -14,4 +14,4 @@ class ConstantColour:
         self.device.Blue.value = self.colour[2]
         self.device.Amber.value = self.colour[3]
 
-        return False
+        return [self]

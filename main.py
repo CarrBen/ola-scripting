@@ -53,14 +53,18 @@ class EffectScheduler:
         await self.update_cb()
 
     async def _run_tasks(self, dt):
-        completed = []
+        new_tasks = []
 
         for task in self._tasks:
-            if await task.update(dt):
-                completed.append(task)
+            next_tasks = await task.update(dt)
 
-        for task in completed:
-            self._tasks.remove(task)
+            if next_tasks is None:
+                continue
+
+            for nt in next_tasks:
+                new_tasks.append(nt)
+
+        self._tasks = new_tasks
 
     def add_task(self, task):
         self._tasks.append(task)
