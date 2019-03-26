@@ -6,6 +6,8 @@ import time
 
 from effects.sine_rainbow import SineRainbow
 from effects.constant_colour import ConstantColour
+from effects.around_colour import AroundColour
+from effects.flicker_dim import FlickerDim
 from stages import studio
 from control import RestAPI
 
@@ -25,7 +27,7 @@ class EffectScheduler:
         self.update_cb = update_cb
         self.last_run = None
         self.time_bank = 0
-        self._tasks = []
+        self._tasks = {}
 
     async def start(self):
         self.loop = asyncio.get_event_loop()
@@ -52,22 +54,28 @@ class EffectScheduler:
 
         await self.update_cb()
 
-    async def _run_tasks(self, dt):
-        new_tasks = []
+    def _run_tasks(self, dt):
+        priorities = sorted(list(self._tasks.keys()))
+        print(priorities)
+        for p in priorities:
+            new_tasks = []
 
-        for task in self._tasks:
-            next_tasks = task.update(dt)
+            for task in self._tasks[p]:
+                next_tasks = task.update(dt)
 
-            if next_tasks is None:
-                continue
+                if next_tasks is None:
+                    continue
 
-            for nt in next_tasks:
-                new_tasks.append(nt)
+                for nt in next_tasks:
+                    new_tasks.append(nt)
 
-        self._tasks = new_tasks
+            self._tasks[p] = new_tasks
 
-    def add_task(self, task):
-        self._tasks.append(task)
+    def add_task(self, task, priority=0):
+        default = []
+        l = self._tasks.get(priority, default)
+        self._tasks[priority] = l
+        l.append(task)
 
     async def kill(self, universe):
         universe.kill()
@@ -78,7 +86,9 @@ interface = OLAInterface(studio.u, "http://localhost:9090/set_dmx")
 effect_scheduler = EffectScheduler(1.0/25, interface.send_update)
 for dev in studio.u.devices:
     #scheduler.add_task(ConstantColour(dev, colour=(0, 0, 0, 50)))
-    effect_scheduler.add_task(SineRainbow(dev))
+    effect_scheduler.add_task(ConstantColour(dev, colour=(100, 100, 100, 200)))
+effect_scheduler.add_task(AroundColour(studio.grid_front_left), 2)
+
 rest_api = RestAPI(studio)
 
 loop = asyncio.get_event_loop()
