@@ -8,7 +8,7 @@ class SineRainbow:
         self.speed = speed
         self.offset = offset
 
-    async def update(self, dt):
+    def update(self, dt):
         self.counter += dt
 
         self.device.Red.value = max(0, math.sin((self.counter + 0) * self.speed) * 511 - 256)

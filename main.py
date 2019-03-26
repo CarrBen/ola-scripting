@@ -47,7 +47,7 @@ class EffectScheduler:
         self.last_run = self.next_run
 
         while self.time_bank >= self.interval:
-            await self._run_tasks(self.interval)
+            self._run_tasks(self.interval)
             self.time_bank -= self.interval
 
         await self.update_cb()
@@ -56,7 +56,7 @@ class EffectScheduler:
         new_tasks = []
 
         for task in self._tasks:
-            next_tasks = await task.update(dt)
+            next_tasks = task.update(dt)
 
             if next_tasks is None:
                 continue
