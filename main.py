@@ -56,7 +56,6 @@ class EffectScheduler:
 
     def _run_tasks(self, dt):
         priorities = sorted(list(self._tasks.keys()))
-        print(priorities)
         for p in priorities:
             new_tasks = []
 
@@ -89,7 +88,7 @@ for dev in studio.u.devices:
     effect_scheduler.add_task(ConstantColour(dev, colour=(100, 100, 100, 200)))
 effect_scheduler.add_task(AroundColour(studio.grid_front_left), 2)
 
-rest_api = RestAPI(studio)
+rest_api = RestAPI(studio, effect_scheduler)
 
 loop = asyncio.get_event_loop()
 tasks = asyncio.gather(effect_scheduler.start(), rest_api.start())

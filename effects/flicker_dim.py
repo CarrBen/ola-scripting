@@ -1,8 +1,8 @@
 import math
 import random
+from dmx import JsonSerialiseMixin
 
-
-class FlickerDim:
+class FlickerDim(JsonSerialiseMixin):
     def __init__(self, device, length=None, seed=None):
         self.device = device
         self.length = length
@@ -11,7 +11,7 @@ class FlickerDim:
         self.start_fade = 1.0
         self.finish_fade = 1.0
         self.dim_by = 0.5
-        self.generator = random.Random(seed)
+        self._generator = random.Random(seed)
 
     def cancel(self, over_seconds=1.0):
         if self.length is not None and self.counter > self.length:
@@ -29,8 +29,8 @@ class FlickerDim:
         else:
             self._main()
 
-        if self.length is None or self.counter < self.length + self.finish_fade:
-            return [None]
+        if self.length is None or self.counter > self.length + self.finish_fade:
+            return None
         return [self]
 
     def _start_fade(self):
@@ -41,7 +41,7 @@ class FlickerDim:
         self.device.Amber.value = self.device.Amber.value * dim_amp
 
     def _main(self):
-        rand = self.generator.random()
+        rand = self._generator.random()
         dim_amp = min(1 - self.dim_by, rand)
         self.device.Red.value = self.device.Red.value * dim_amp
         self.device.Green.value = self.device.Green.value * dim_amp

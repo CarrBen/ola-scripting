@@ -1,9 +1,9 @@
 import math
-
+from dmx import JsonSerialiseMixin
 
 #TODO: Base effect class
 
-class ConstantColour:
+class ConstantColour(JsonSerialiseMixin):
     def __init__(self, device, colour=(255, 255, 255, 255)):
         self.device = device
         self.colour = colour

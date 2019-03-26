@@ -1,7 +1,8 @@
 import math
+from dmx import JsonSerialiseMixin
 
 
-class AroundColour:
+class AroundColour(JsonSerialiseMixin):
     def __init__(self, device, amplitudes=(15, 15, 15, 15)):
         self.device = device
         self.amplitudes = amplitudes

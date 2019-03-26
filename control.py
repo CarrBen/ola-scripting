@@ -2,6 +2,8 @@ from aiohttp import web
 import json
 import weakref
 
+from effects.flicker_dim import FlickerDim
+
 
 # TODO: Serialisable mixin
 # TODO: __xml__ with parent & depth parameters?
@@ -15,16 +17,26 @@ class RecursiveEncoder(json.JSONEncoder):
 
 
 class RestAPI:
-    def __init__(self, stage, host="localhost", port=8080):
+    def __init__(self, stage, effects, host="localhost", port=8080):
         self.stage = stage
+        self.effects = effects
         self.host = host
         self.port = port
 
     async def _get_universes(self, request):
         return web.Response(text=json.dumps(self.stage.u, cls=RecursiveEncoder), headers={"Content-Type": "application/json"})
 
+    async def _get_tasks(self, request):
+        return web.Response(text=json.dumps(self.effects._tasks, cls=RecursiveEncoder), headers={"Content-Type": "application/json"})
+
+    async def task_test(self, request):
+        self.effects.add_task(FlickerDim(self.stage.grid_front_right, length=10.0), 2)
+        return web.Response(text="true")
+
     def _register_routes(self, app):
         app.add_routes([web.get('/universes', self._get_universes)])
+        app.add_routes([web.get('/tasks', self._get_tasks)])
+        app.add_routes([web.get('/test_task', self.task_test)])
 
     async def start(self):
         app = web.Application()
