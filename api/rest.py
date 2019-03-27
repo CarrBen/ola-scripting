@@ -2,7 +2,8 @@ from aiohttp import web
 import json
 import weakref
 
-from effects.flicker_dim import FlickerDim
+from effects import FlickerDim
+from effects.base import EffectMeta, BaseEffect
 
 
 # TODO: Serialisable mixin
@@ -26,6 +27,10 @@ class RestAPI:
     async def _get_universes(self, request):
         return web.Response(text=json.dumps(self.stage.u, cls=RecursiveEncoder), headers={"Content-Type": "application/json"})
 
+    async def _get_effects(self, request):
+        print(EffectMeta.effect_types)
+        return web.Response(text="test")
+
     async def _get_tasks(self, request):
         return web.Response(text=json.dumps(self.effects._tasks, cls=RecursiveEncoder), headers={"Content-Type": "application/json"})
 
@@ -36,6 +41,7 @@ class RestAPI:
     def _register_routes(self, app):
         app.add_routes([web.get('/universes', self._get_universes)])
         app.add_routes([web.get('/tasks', self._get_tasks)])
+        app.add_routes([web.get('/effects', self._get_effects)])
         app.add_routes([web.get('/test_task', self.task_test)])
 
     async def start(self):

@@ -4,12 +4,9 @@ import asyncio
 import time
 #from aiohttp import web
 
-from effects.sine_rainbow import SineRainbow
-from effects.constant_colour import ConstantColour
-from effects.around_colour import AroundColour
-from effects.flicker_dim import FlickerDim
+from effects import SineRainbow, ConstantColour, AroundColour, FlickerDim
 from stages import studio
-from control import RestAPI
+from api import RestAPI
 
 # TODO: Logging
 # TODO: Make HTTP API do stuff

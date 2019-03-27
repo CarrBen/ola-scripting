@@ -1,8 +1,11 @@
 import math
 import random
+from .base import BaseEffect
 from dmx import JsonSerialiseMixin
 
-class FlickerDim(JsonSerialiseMixin):
+class FlickerDim(BaseEffect, JsonSerialiseMixin):
+    NAME = "Dim & FLicker"
+
     def __init__(self, device, length=None, seed=None):
         self.device = device
         self.length = length
