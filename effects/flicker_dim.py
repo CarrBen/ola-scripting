@@ -4,7 +4,7 @@ from .base import BaseEffect
 from dmx import JsonSerializeMixin
 
 class FlickerDim(BaseEffect, JsonSerializeMixin):
-    name = "Dim & FLicker"
+    name = "Dim & Flicker"
 
     def __init__(self, device, length=None, seed=None):
         self.device = device

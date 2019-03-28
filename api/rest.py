@@ -19,7 +19,9 @@ class RecursiveEncoder(json.JSONEncoder):
 
 
 def json_response(content, extra_headers={}, **kwargs):
-    return web.Response(text=json.dumps(content), headers={"Content-Type": "application/json"}.update(extra_headers), **kwargs)
+    headers = {"Content-Type": "application/json"}
+    headers.update(extra_headers)
+    return web.Response(text=json.dumps(content), headers=headers, **kwargs)
 
 
 class RestAPI:
@@ -33,7 +35,7 @@ class RestAPI:
         return json_response(json_serializers.serialize_default(self.stage.u))
 
     async def _get_effects(self, request):
-        return json_response(json_serializers.serialize_default(EffectMeta.effect_types))
+        return json_response(json_serializers.serialize_default(list(EffectMeta.effect_types.values())))
 
     async def _get_tasks(self, request):
         return json_response(json_serializers.serialize_default(self.effects._tasks))
