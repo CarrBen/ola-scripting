@@ -18,6 +18,10 @@ class RecursiveEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
+def json_response(content, extra_headers={}, **kwargs):
+    return web.Response(text=json.dumps(content), headers={"Content-Type": "application/json"}.update(extra_headers), **kwargs)
+
+
 class RestAPI:
     def __init__(self, stage, effects, host="localhost", port=8080):
         self.stage = stage
@@ -26,14 +30,13 @@ class RestAPI:
         self.port = port
 
     async def _get_universes(self, request):
-        return web.Response(text=json.dumps(json_serializers.serialize_default(self.stage.u)), headers={"Content-Type": "application/json"})
+        return json_response(json_serializers.serialize_default(self.stage.u))
 
     async def _get_effects(self, request):
-        print(EffectMeta.effect_types)
-        return web.Response(text="test")
+        return json_response(json_serializers.serialize_default(EffectMeta.effect_types))
 
     async def _get_tasks(self, request):
-        return web.Response(text=json.dumps(json_serializers.serialize_default(self.effects._tasks)), headers={"Content-Type": "application/json"})
+        return json_response(json_serializers.serialize_default(self.effects._tasks))
 
     async def task_test(self, request):
         task = FlickerDim(self.stage.grid_front_right, length=10.0)
@@ -44,7 +47,6 @@ class RestAPI:
         app.add_routes([web.get('/universes', self._get_universes)])
         app.add_routes([web.get('/tasks', self._get_tasks)])
         app.add_routes([web.get('/effects', self._get_effects)])
-        app.add_routes([web.get('/test_task', self.task_test)])
 
     async def start(self):
         app = web.Application()

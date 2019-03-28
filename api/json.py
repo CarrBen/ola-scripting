@@ -5,13 +5,21 @@ from effects.base import BaseEffect
 
 
 def serialize_default(object, parents=None, depth=3):
+    if parents is None:
+        parents = set()
+
     serializer = JsonSerializerMeta.default_serializers.get(type(object), None)
 
     if serializer is None:
         for t, s in JsonSerializerMeta.default_serializers.items():
-            if issubclass(type(object), t):
-                serializer = s
-                break
+            if inspect.isclass(object):
+                if issubclass(object, t):
+                    serializer = s
+                    break
+            else:
+                if issubclass(type(object), t):
+                    serializer = s
+                    break
 
     if serializer is not None:
         return serializer().serialize(object, parents, depth)
@@ -99,7 +107,7 @@ class JsonSerializer(metaclass=JsonSerializerMeta):
 
         new_parents = {self, *parents}
 
-        return serialize_default(value, parents, depth)
+        return serialize_default(value, new_parents, depth)
 
 
 class UniverseSerializer(JsonSerializer):
