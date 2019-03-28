@@ -1,4 +1,7 @@
+import inspect
+
 from dmx import Universe, Device, Channel
+from effects.base import BaseEffect
 
 
 def serialize_default(object, parents=None, depth=3):
@@ -10,10 +13,19 @@ def serialize_default(object, parents=None, depth=3):
                 serializer = s
                 break
 
-    if serializer is None:
-        return object
+    if serializer is not None:
+        return serializer().serialize(object, parents, depth)
 
-    return serializer().serialize(object, parents, depth)
+    if type(object) is list or type(object) is type((x for x in (1,2))):
+        return [serialize_default(item, parents, depth) for item in object]
+
+    if type(object) is dict:
+        return {key: serialize_default(value, parents, depth) for key, value in object.items()}
+
+    if object in parents:
+        return None
+
+    return object
 
 
 class JsonSerializerMeta(type):
@@ -24,7 +36,7 @@ class JsonSerializerMeta(type):
 
         target = dict.get('target', None)
 
-        if target is not None and type(target) is not type(type):
+        if target is not None and not inspect.isclass(target):
             raise ValueError("If the 'target' class attribute is defined, it must be of type 'type'.")
 
         if name != "JsonSerializer" and target is not None:
@@ -52,10 +64,6 @@ class JsonSerializer(metaclass=JsonSerializerMeta):
 
         return output
 
-    # TODO: Update to use a list of attrs
-    # TODO: Check for existence of get_x method first
-    # TODO: Accept set of parents
-
     def _get_json_by_name(self, object, attr, parents, depth):
         method = getattr(self, f'get_{attr}', None)
         if method is not None and type(method) == type(self.__init__):
@@ -74,7 +82,7 @@ class JsonSerializer(metaclass=JsonSerializerMeta):
             if attr.startswith('_'):
                 continue
             value = getattr(object, attr)
-            if type(value) == t:
+            if issubclass(type(value), t):
                 outputs.append((attr, self._to_json(value, parents, depth)))
 
         return outputs
@@ -107,3 +115,8 @@ class DeviceSerializer(JsonSerializer):
 class ChannelSerializer(JsonSerializer):
     target = Channel
     attrs = ["id", "name", "value", "on_kill"]
+
+
+class EffectSerializer(JsonSerializer):
+    target = BaseEffect
+    attrs = [Device, str, list, tuple, int, float]
