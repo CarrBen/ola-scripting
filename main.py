@@ -2,6 +2,7 @@ from dmx import Universe, RGBAPar
 from ola import OLAInterface
 import asyncio
 import time
+import weakref
 #from aiohttp import web
 
 from effects import SineRainbow, ConstantColour, AroundColour, FlickerDim
@@ -25,6 +26,8 @@ class EffectScheduler:
         self.last_run = None
         self.time_bank = 0
         self._tasks = {}
+        self._tasks_by_id = weakref.WeakValueDictionary()
+        self._id_sequence = 1
 
     async def start(self):
         self.loop = asyncio.get_event_loop()
@@ -72,6 +75,10 @@ class EffectScheduler:
         l = self._tasks.get(priority, default)
         self._tasks[priority] = l
         l.append(task)
+
+        task.id = self._id_sequence
+        self._tasks_by_id[self._id_sequence] = task
+        self._id_sequence += 1
 
     async def kill(self, universe):
         universe.kill()
