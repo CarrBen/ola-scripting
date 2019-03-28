@@ -1,8 +1,8 @@
 import math
 from .base import BaseEffect
-from dmx import JsonSerialiseMixin
+from dmx import JsonSerializeMixin
 
-class SineRainbow(BaseEffect, JsonSerialiseMixin):
+class SineRainbow(BaseEffect, JsonSerializeMixin):
     NAME = "Sin Colour Rainbow"
 
     def __init__(self, device, speed=1.0, offset=0):

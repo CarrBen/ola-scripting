@@ -1,5 +1,5 @@
 
-class JsonSerialiseMixin:
+class JsonSerializeMixin:
     def __json__(self, parents=set(), depth=3):
         attrs = dir(self)
         return {
@@ -40,7 +40,7 @@ class JsonSerialiseMixin:
         return value
 
 
-class Universe(JsonSerialiseMixin):
+class Universe(JsonSerializeMixin):
     def __init__(self, id, name):
         self.name = name
         self.id = id
@@ -67,7 +67,7 @@ class Universe(JsonSerialiseMixin):
             dev.kill()
 
 
-class Device(JsonSerialiseMixin):
+class Device(JsonSerializeMixin):
     def __init__(self, id, name):
         self.name = name
         self.id = id
@@ -103,7 +103,7 @@ class Device(JsonSerialiseMixin):
 # TODO: Kill actions (Fade/Persist)
 DARK = "DARK"
 
-class Channel(JsonSerialiseMixin):
+class Channel(JsonSerializeMixin):
     def __init__(self, id, name, value=0, on_kill=DARK):
         self.id = id
         self.name = name

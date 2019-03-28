@@ -1,9 +1,9 @@
 import math
 from .base import BaseEffect
-from dmx import JsonSerialiseMixin
+from dmx import JsonSerializeMixin
 
 
-class AroundColour(BaseEffect, JsonSerialiseMixin):
+class AroundColour(BaseEffect, JsonSerializeMixin):
     NAME = "Fade Around Colour"
 
     def __init__(self, device, amplitudes=(15, 15, 15, 15)):
