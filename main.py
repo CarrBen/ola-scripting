@@ -91,7 +91,7 @@ class EffectScheduler:
 
 
 interface = OLAInterface(studio.u, "http://localhost:9090/set_dmx")
-effect_scheduler = EffectScheduler(1/25.0, interface.send_update)
+effect_scheduler = EffectScheduler(1/100.0, interface.send_update)
 # for dev in studio.u.devices:
 #     #scheduler.add_task(ConstantColour(dev, colour=(0, 0, 0, 50)))
 #     effect_scheduler.add_task(ConstantColour(dev, colour=(100, 100, 100, 200)))

@@ -2,7 +2,7 @@ from aiohttp import web
 import json
 import weakref
 
-from effects import FlickerDim
+from effects import FlickerDim, SineRainbow
 from effects.base import EffectMeta, BaseEffect
 
 from . import json as json_serializers
@@ -24,6 +24,7 @@ class RestAPI:
 
     def setup_app(self):
         self.app = Quart(__name__)
+        StageView(self.stage).register(self.app)
         v = UniverseView(self.stage.u)
         v.register(self.app)
         v = TaskView(self.effects, self.stage)
@@ -43,6 +44,17 @@ class RestAPI:
         await serve(self.app, config)
         if on_shutdown is not None:
             on_shutdown()
+
+
+class StageView:
+    def __init__(self, stage):
+        self.stage = stage
+
+    def get(self):
+        return jsonify(json_serializers.serialize_default(self.stage))
+
+    def register(self, app):
+        app.add_url_rule('/stage', endpoint='get_stage', view_func=self.get, methods=['GET'])
 
 
 class UniverseView:
@@ -66,15 +78,16 @@ class TaskView:
         self.scheduler = scheduler
         self.stage = stage
 
-    def task_get_list(self):
+    def get_list(self):
         return jsonify(json_serializers.serialize_default(self.scheduler._tasks))
 
     def task_test(self):
         # task = FlickerDim(self.stage.grid_front_left, length=None)
-        task = FlickerDim(self.stage.all, length=None)
+        # task = FlickerDim(self.stage.all, length=None)
+        task = SineRainbow(self.stage.all)
         self.scheduler.add_task(task, 2)
         return jsonify(json_serializers.serialize_default(task))
 
     def register(self, app):
-        app.add_url_rule('/tasks', view_func=self.task_get_list, methods=['GET'])
-        app.add_url_rule('/tasks/test', view_func=self.task_test, methods=['GET'])
+        app.add_url_rule('/tasks', endpoint='get_tasks', view_func=self.get_list, methods=['GET'])
+        app.add_url_rule('/tasks/test', endpoint='create_task', view_func=self.task_test, methods=['GET'])

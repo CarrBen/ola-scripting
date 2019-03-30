@@ -5,8 +5,8 @@ from dmx import JsonSerializeMixin
 class SineRainbow(BaseEffect, JsonSerializeMixin):
     name = "Sin Colour Rainbow"
 
-    def __init__(self, device, speed=1.0, offset=0):
-        self.device = device
+    def __init__(self, devices, speed=1.0, offset=0):
+        self.devices = devices if hasattr(devices, '__iter__') else [devices]
         self.counter = offset
         self.speed = speed
         self.offset = offset
@@ -14,9 +14,10 @@ class SineRainbow(BaseEffect, JsonSerializeMixin):
     def update(self, dt):
         self.counter += dt
 
-        self.device.Red.value = max(0, math.sin((self.counter + 0) * self.speed) * 511 - 256)
-        self.device.Green.value = max(0, math.sin((self.counter + math.pi/2) * self.speed) * 511 - 256)
-        self.device.Blue.value = max(0, math.sin((self.counter + math.pi) * self.speed) * 511 - 256)
-        self.device.Amber.value = max(0, math.sin((self.counter + 3*math.pi/2) * self.speed) * 511 - 256)
+        for dev in self.devices:
+            dev.Red.value = max(0, math.sin((self.counter + 0) * self.speed) * 511 - 256)
+            dev.Green.value = max(0, math.sin((self.counter + math.pi/2) * self.speed) * 511 - 256)
+            dev.Blue.value = max(0, math.sin((self.counter + math.pi) * self.speed) * 511 - 256)
+            dev.Amber.value = max(0, math.sin((self.counter + 3*math.pi/2) * self.speed) * 511 - 256)
 
         return [self]
