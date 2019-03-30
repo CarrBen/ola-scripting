@@ -95,8 +95,12 @@ effect_scheduler = EffectScheduler(1/25.0, interface.send_update)
 # for dev in studio.u.devices:
 #     #scheduler.add_task(ConstantColour(dev, colour=(0, 0, 0, 50)))
 #     effect_scheduler.add_task(ConstantColour(dev, colour=(100, 100, 100, 200)))
-effect_scheduler.add_task(ConstantColour(studio.grid_front_left, colour=(100, 100, 100, 200)))
-effect_scheduler.add_task(AroundColour(studio.grid_front_left), 2)
+
+# effect_scheduler.add_task(ConstantColour(studio.grid_front_left, colour=(100, 100, 100, 200)))
+# effect_scheduler.add_task(AroundColour(studio.grid_front_left), 2)
+
+effect_scheduler.add_task(ConstantColour(studio.all, colour=(100, 100, 100, 200)))
+effect_scheduler.add_task(AroundColour(studio.all), 2)
 
 rest_api = RestAPI(studio, effect_scheduler)
 

@@ -7,14 +7,15 @@ from dmx import JsonSerializeMixin
 class ConstantColour(BaseEffect, JsonSerializeMixin):
     name = "Constant Colour"
 
-    def __init__(self, device, colour=(255, 255, 255, 255)):
-        self.device = device
+    def __init__(self, devices, colour=(255, 255, 255, 255)):
+        self.devices = devices if hasattr(devices, '__iter__') else [devices]
         self.colour = colour
 
     def update(self, dt):
-        self.device.Red.value = self.colour[0]
-        self.device.Green.value = self.colour[1]
-        self.device.Blue.value = self.colour[2]
-        self.device.Amber.value = self.colour[3]
+        for dev in self.devices:
+            dev.Red.value = self.colour[0]
+            dev.Green.value = self.colour[1]
+            dev.Blue.value = self.colour[2]
+            dev.Amber.value = self.colour[3]
 
         return [self]

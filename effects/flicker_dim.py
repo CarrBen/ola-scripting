@@ -6,8 +6,8 @@ from dmx import JsonSerializeMixin
 class FlickerDim(BaseEffect, JsonSerializeMixin):
     name = "Dim & Flicker"
 
-    def __init__(self, device, length=None, seed=None):
-        self.device = device
+    def __init__(self, devices, length=None, seed=None):
+        self.devices = devices if hasattr(devices, '__iter__') else [devices]
         self.length = length
         self.seed = seed
         self.counter = 0.0
@@ -36,11 +36,11 @@ class FlickerDim(BaseEffect, JsonSerializeMixin):
 
     def _main(self):
         dim_amp = self.current_amplitude
-        print(dim_amp)
-        self.device.Red.value = self.device.Red.value * dim_amp
-        self.device.Green.value = self.device.Green.value * dim_amp
-        self.device.Blue.value = self.device.Blue.value * dim_amp
-        self.device.Amber.value = self.device.Amber.value * dim_amp
+        for dev in self.devices:
+            dev.Red.value = dev.Red.value * dim_amp
+            dev.Green.value = dev.Green.value * dim_amp
+            dev.Blue.value = dev.Blue.value * dim_amp
+            dev.Amber.value = dev.Amber.value * dim_amp
 
     @property
     def current_amplitude(self):
