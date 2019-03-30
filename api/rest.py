@@ -26,6 +26,8 @@ class RestAPI:
         self.app = Quart(__name__)
         v = UniverseView(self.stage.u)
         v.register(self.app)
+        v = TaskView(self.effects, self.stage)
+        v.register(self.app)
 
     async def _get_universes(self, request):
         return json_response(json_serializers.serialize_default(self.stage.u))
@@ -35,16 +37,6 @@ class RestAPI:
 
     async def _get_tasks(self, request):
         return json_response(json_serializers.serialize_default(self.effects._tasks))
-
-    async def task_test(self, request):
-        task = FlickerDim(self.stage.grid_front_right, length=10.0)
-        self.effects.add_task(task, 2)
-        return web.Response(text=json.dumps(json_serializers.serialize_default(task)))
-
-    def _register_routes(self, app):
-        app.add_routes([web.get('/universes', self._get_universes)])
-        app.add_routes([web.get('/tasks', self._get_tasks)])
-        app.add_routes([web.get('/effects', self._get_effects)])
 
     async def start(self, on_shutdown=None):
         config = HyperConfig.from_mapping({'bind': [f'{self.host}:{self.port}']})
@@ -67,3 +59,21 @@ class UniverseView:
     def register(self, app):
         app.add_url_rule('/universes', view_func=self.get_list, methods=['GET'])
         app.add_url_rule('/universes/<int:id>', view_func=self.get_by_id, methods=['GET'])
+
+
+class TaskView:
+    def __init__(self, scheduler, stage):
+        self.scheduler = scheduler
+        self.stage = stage
+
+    def task_get_list(self):
+        return jsonify(json_serializers.serialize_default(self.scheduler._tasks))
+
+    def task_test(self):
+        task = FlickerDim(self.stage.grid_front_left, length=10.0)
+        self.scheduler.add_task(task, 2)
+        return jsonify(json_serializers.serialize_default(task))
+
+    def register(self, app):
+        app.add_url_rule('/tasks', view_func=self.task_get_list, methods=['GET'])
+        app.add_url_rule('/tasks/test', view_func=self.task_test, methods=['GET'])

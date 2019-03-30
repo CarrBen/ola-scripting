@@ -52,6 +52,7 @@ class FlickerDim(BaseEffect, JsonSerializeMixin):
         self.device.Amber.value = self.device.Amber.value * dim_amp
 
     def _finish_fade(self):
+        # TODO: Limit dim_amp, long intervasl can take it to much greater than self.length
         dim_amp = 1 - (self.dim_by * (1 - ((self.counter - self.length) / self.finish_fade)))
         self.device.Red.value = self.device.Red.value * dim_amp
         self.device.Green.value = self.device.Green.value * dim_amp

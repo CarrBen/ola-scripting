@@ -61,7 +61,11 @@ class EffectScheduler:
             new_tasks = []
 
             for task in self._tasks[p]:
-                next_tasks = task.update(dt)
+                # TODO: Better error handling
+                try:
+                    next_tasks = task.update(dt)
+                except:
+                    next_tasks = [task]
 
                 if next_tasks is None:
                     continue
@@ -87,10 +91,11 @@ class EffectScheduler:
 
 
 interface = OLAInterface(studio.u, "http://localhost:9090/set_dmx")
-effect_scheduler = EffectScheduler(12, interface.send_update)
-for dev in studio.u.devices:
-    #scheduler.add_task(ConstantColour(dev, colour=(0, 0, 0, 50)))
-    effect_scheduler.add_task(ConstantColour(dev, colour=(100, 100, 100, 200)))
+effect_scheduler = EffectScheduler(1/25.0, interface.send_update)
+# for dev in studio.u.devices:
+#     #scheduler.add_task(ConstantColour(dev, colour=(0, 0, 0, 50)))
+#     effect_scheduler.add_task(ConstantColour(dev, colour=(100, 100, 100, 200)))
+effect_scheduler.add_task(ConstantColour(studio.grid_front_left, colour=(100, 100, 100, 200)))
 effect_scheduler.add_task(AroundColour(studio.grid_front_left), 2)
 
 rest_api = RestAPI(studio, effect_scheduler)
