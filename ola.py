@@ -16,6 +16,11 @@ class OLAInterface:
         async with self.session.post(self.url, data=self._serialize(self.universe)) as resp:
             return resp.status == 200
 
+    async def cleanup(self):
+        if self.session is None:
+            return
+        await self.session.close()
+
     def send_update_sync(self):
         requests.post(self.url, data=self._serialize(self.universe))
 

@@ -28,12 +28,13 @@ class EffectScheduler:
         self._tasks = {}
         self._tasks_by_id = weakref.WeakValueDictionary()
         self._id_sequence = 1
+        self._stopping = False
 
     async def start(self):
         self.loop = asyncio.get_event_loop()
         self.last_run = self.loop.time()
 
-        while True:
+        while not self._stopping:
             self._schedule_call()
             await self._run()
             await asyncio.sleep(max(0, self.next_run - self.loop.time()))
@@ -86,7 +87,7 @@ class EffectScheduler:
 
 
 interface = OLAInterface(studio.u, "http://localhost:9090/set_dmx")
-effect_scheduler = EffectScheduler(1.0/25, interface.send_update)
+effect_scheduler = EffectScheduler(12, interface.send_update)
 for dev in studio.u.devices:
     #scheduler.add_task(ConstantColour(dev, colour=(0, 0, 0, 50)))
     effect_scheduler.add_task(ConstantColour(dev, colour=(100, 100, 100, 200)))
@@ -95,12 +96,24 @@ effect_scheduler.add_task(AroundColour(studio.grid_front_left), 2)
 rest_api = RestAPI(studio, effect_scheduler)
 
 loop = asyncio.get_event_loop()
-tasks = asyncio.gather(effect_scheduler.start(), rest_api.start())
+loop.set_debug(True)
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
+def shutdown():
+    tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task() and not t.done()]
+    [t.cancel() for t in tasks]
+    
+scheduler_task = effect_scheduler.start()
+api_task = rest_api.start(on_shutdown=shutdown)
+tasks = asyncio.gather(scheduler_task, api_task)
+
 try:
     loop.run_until_complete(tasks)
-except KeyboardInterrupt:
+except asyncio.CancelledError:
     pass
 
-#studio.u.kill()
 loop.run_until_complete(effect_scheduler.kill(studio.u))
-#interface.send_update_sync()
+loop.run_until_complete(interface.cleanup())
+loop.stop()
+loop.close()

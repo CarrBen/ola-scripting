@@ -7,29 +7,25 @@ from effects.base import EffectMeta, BaseEffect
 
 from . import json as json_serializers
 
-# TODO: Serializable mixin
-# TODO: __xml__ with parent & depth parameters?
-# TODO: More specific serialization?
 
-class RecursiveEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if hasattr(obj, '__json__'):
-            return obj.__json__()
-        return super().default(obj)
-
-
-def json_response(content, extra_headers={}, **kwargs):
-    headers = {"Content-Type": "application/json"}
-    headers.update(extra_headers)
-    return web.Response(text=json.dumps(content), headers=headers, **kwargs)
+from hypercorn.asyncio import serve
+from hypercorn.config import Config as HyperConfig
+from quart import Quart, Config
+from quart.json import jsonify
 
 
 class RestAPI:
-    def __init__(self, stage, effects, host="localhost", port=8080):
+    def __init__(self, stage, effects, host="127.0.0.1", port=8080):
         self.stage = stage
         self.effects = effects
         self.host = host
         self.port = port
+        self.setup_app()
+
+    def setup_app(self):
+        self.app = Quart(__name__)
+        v = UniverseView(self.stage.u)
+        v.register(self.app)
 
     async def _get_universes(self, request):
         return json_response(json_serializers.serialize_default(self.stage.u))
@@ -50,10 +46,24 @@ class RestAPI:
         app.add_routes([web.get('/tasks', self._get_tasks)])
         app.add_routes([web.get('/effects', self._get_effects)])
 
-    async def start(self):
-        app = web.Application()
-        self._register_routes(app)
-        runner = web.AppRunner(app)
-        await runner.setup()
-        site = web.TCPSite(runner, self.host, self.port)
-        await site.start()
+    async def start(self, on_shutdown=None):
+        config = HyperConfig.from_mapping({'bind': [f'{self.host}:{self.port}']})
+        await serve(self.app, config)
+        if on_shutdown is not None:
+            on_shutdown()
+
+
+class UniverseView:
+    def __init__(self, universe):
+        self.universe = universe
+
+    def get_list(self):
+        return jsonify(json_serializers.serialize_default([self.universe]))
+
+    def get_by_id(self, id):
+        print(id)
+        return jsonify(json_serializers.serialize_default([self.universe]))
+
+    def register(self, app):
+        app.add_url_rule('/universes', view_func=self.get_list, methods=['GET'])
+        app.add_url_rule('/universes/<int:id>', view_func=self.get_by_id, methods=['GET'])
