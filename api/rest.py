@@ -70,7 +70,7 @@ class TaskView:
         return jsonify(json_serializers.serialize_default(self.scheduler._tasks))
 
     def task_test(self):
-        task = FlickerDim(self.stage.grid_front_left, length=10.0)
+        task = FlickerDim(self.stage.grid_front_left, length=None)
         self.scheduler.add_task(task, 2)
         return jsonify(json_serializers.serialize_default(task))
 

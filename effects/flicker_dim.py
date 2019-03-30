@@ -13,8 +13,9 @@ class FlickerDim(BaseEffect, JsonSerializeMixin):
         self.counter = 0.0
         self.start_fade = 1.0
         self.finish_fade = 1.0
-        self.dim_by = 0.5
+        self.dim_by = 0.8
         self._generator = random.Random(seed)
+        self._target = 1.0
 
     def cancel(self, over_seconds=1.0):
         if self.length is not None and self.counter > self.length:
@@ -24,37 +25,29 @@ class FlickerDim(BaseEffect, JsonSerializeMixin):
 
     def update(self, dt):
         self.counter += dt
+        self._target += self._generator.randint(-1, 1) * 0.1
+        self._target = max(0, min(1, self._target))
 
-        if self.counter < self.start_fade:
-            self._start_fade()
-        elif self.length is not None and self.counter > self.length:
-            self._finish_fade()
-        else:
-            self._main()
+        self._main()
 
-        if self.length is None or self.counter > self.length + self.finish_fade:
+        if self.length is not None and self.counter > self.length + self.finish_fade:
             return None
         return [self]
 
-    def _start_fade(self):
-        dim_amp = 1 - (self.dim_by * (self.counter / self.start_fade))
-        self.device.Red.value = self.device.Red.value * dim_amp
-        self.device.Green.value = self.device.Green.value * dim_amp
-        self.device.Blue.value = self.device.Blue.value * dim_amp
-        self.device.Amber.value = self.device.Amber.value * dim_amp
-
     def _main(self):
-        rand = self._generator.random()
-        dim_amp = min(1 - self.dim_by, rand)
+        dim_amp = self.current_amplitude
+        print(dim_amp)
         self.device.Red.value = self.device.Red.value * dim_amp
         self.device.Green.value = self.device.Green.value * dim_amp
         self.device.Blue.value = self.device.Blue.value * dim_amp
         self.device.Amber.value = self.device.Amber.value * dim_amp
 
-    def _finish_fade(self):
-        # TODO: Limit dim_amp, long intervasl can take it to much greater than self.length
-        dim_amp = 1 - (self.dim_by * (1 - ((self.counter - self.length) / self.finish_fade)))
-        self.device.Red.value = self.device.Red.value * dim_amp
-        self.device.Green.value = self.device.Green.value * dim_amp
-        self.device.Blue.value = self.device.Blue.value * dim_amp
-        self.device.Amber.value = self.device.Amber.value * dim_amp
+    @property
+    def current_amplitude(self):
+        dim = self.dim_by * self._target
+        if self.counter < self.start_fade:
+            return 1 - (dim * (self.counter / self.start_fade))
+        elif self.length is not None and self.counter > self.length:
+            return 1 - (dim * (1 - ((self.counter - self.length) / self.finish_fade)))
+
+        return (1 - dim)

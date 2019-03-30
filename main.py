@@ -101,9 +101,9 @@ effect_scheduler.add_task(AroundColour(studio.grid_front_left), 2)
 rest_api = RestAPI(studio, effect_scheduler)
 
 loop = asyncio.get_event_loop()
-loop.set_debug(True)
-import logging
-logging.basicConfig(level=logging.DEBUG)
+# loop.set_debug(True)
+# import logging
+# logging.basicConfig(level=logging.DEBUG)
 
 def shutdown():
     tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task() and not t.done()]
