@@ -121,6 +121,7 @@ class Channel(JsonSerializeMixin):
     @value.setter
     def value(self, v):
         if v > 255 or v < 0:
+            # TODO: Force limit and warn
             raise ValueError(f"Value for {self} of {self.device} must be between 0 and 255 inclusive. Was {v}.")
         self._value = v
 
